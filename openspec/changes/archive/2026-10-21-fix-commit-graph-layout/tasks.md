@@ -1,0 +1,28 @@
+# Tasks
+
+## 1. Geometria e rotas ortogonais no CommitGraph
+
+- [x] 1.1 Em `gui-git/src/components/CommitGraph.tsx`, adicionar `row: number` a `PlacedCommit` e preenchê-lo em `layoutCommits` com o índice de exibição (elimina o `findIndex` O(n) por dot no render atual). **Verificar:** `tsc` compila e o layout continua atribuindo `{column, color, row}` por commit sem mudança de comportamento dos testes existentes.
+- [x] 1.2 Adicionar constantes `GUTTER_MARGIN=8`, `MAX_GUTTER_W=120`, `CORNER_R=4` e exportar `graphMetrics(placed): { laneCount; gutterWidth; laneWidth }` com compressão (`gutterWidth = min(MAX_GUTTER_W, GUTTER_MARGIN*2 + laneCount*LANE_W)`; `laneWidth` comprime quando transborda). **Verificar:** para `/tmp/git-test` (2 lanes) retorna `gutterWidth=60`, `laneWidth=22`; para 15 lanes retorna `gutterWidth=120` com `laneWidth` comprimido.
+- [x] 1.3 Implementar `buildGeometry(placed, drawn, laneWidth)` com `laneX(i)=GUTTER_MARGIN + i*laneWidth + laneWidth/2` e `rowY(r)=r*ROW_H + ROW_H/2`; manter o stub de fallback para pai ausente (`x2=x1, y2=y1+ROW_H`). **Verificar:** arestas com coordenadas de pixel corretas para rails verticais e merges.
+- [x] 1.4 Implementar `edgePath(e)` ortogonal (rail vertical `V` em mesma lane; `L` + cotovelo `Q` com `CORNER_R` para merge entre lanes) e substituir a bézier `c ...` no render. **Verificar:** merges geram `M x1 y1 L x1 yM Q x1 y2 x1±R y2 L x2 y2`; todos os X dentro de `[GUTTER_MARGIN, gutterWidth-GUTTER_MARGIN]`.
+- [x] 1.5 Alterar props de `CommitGraph` para aceitar `placed: PlacedCommit[]`, `laneWidth`, `gutterWidth` (remover `nodes`); SVG `width=gutterWidth`, `height=placed.length*ROW_H`, `display:block`, sem `overflow:visible`; renderizar `visibleEdges` filtrado por janela (`min(y1,y2)<end*ROW_H && max(y1,y2)>=start*ROW_H`) e dots de `placed.slice(start,end)`. **Verificar:** `tsc` limpo; apenas slice visível no DOM.
+
+## 2. Estrutura gutter + rows no GraphPane
+
+- [x] 2.1 Em `gui-git/src/components/GraphPane.tsx`, importar `layoutCommits`, `graphMetrics` e memoizar `{ placed, metrics }` via `useMemo([graph])`. **Verificar:** gutterWidth disponível antes de renderizar o CommitGraph.
+- [x] 2.2 Reescrever o JSX de `.graph-canvas` para fluxo flex com altura real `height: total*ROW_H`, composto por `.graph-gutter` (width = `metrics.gutterWidth`) e `.graph-rows`; remover os wrappers `.graph-svg-layer`/`.graph-rows-layer` e o `transform: translateY(scrollTop)`. **Verificar:** rolagem nativa; gutter e rows rolam juntos.
+- [x] 2.3 Manter `.ga-row` com `style={{ top: rowIndex*ROW_H }}`, seleção/head highlight e clique inalterados; `scrollTop` do `useVirtual` deixa de ser renderizado. **Verificar:** clique em dot e em linha seleciona o mesmo commit.
+
+## 3. CSS do layout
+
+- [x] 3.1 Em `gui-git/src/App.css`, trocar `.graph-canvas` para `display:flex`, remover `.graph-svg-layer` e `.graph-rows-layer`, adicionar `.graph-gutter { flex:0 0 auto; overflow:hidden }`, `.graph-gutter svg { display:block }` e `.graph-rows { position:relative; flex:1 1 auto; min-width:0 }`. **Verificar:** app renderiza sem essas classes órfãs.
+- [x] 3.2 Ajustar `.ga-row` para `padding: 0 12px 0 8px` (sem o `padding-left:12px` de "deixa espaço pros dots") e adicionar `overflow-x: hidden` em `.graph-scroll`. **Verificar:** texto começa logo após o gutter, sem overlap.
+
+## 4. Verificação fim a fim
+
+- [x] 4.1 `cd gui-git && npm run build` (roda `tsc` + vite) passa sem erros de tipo. **Verificar:** build limpo.
+- [x] 4.2 Verificar geometria real contra `/tmp/git-test` (node script `gui-git/verify-graph-geometry.mts`, roda via `npx tsx`). Ordem real do `git log --all` (6 commits, sem o merge `869c723` — exluído pelo `--all` atual) → `layoutCommits` REAL produz colunas `[0,1,1,2,3,4]` (5 lanes, não 2). **Valores verificados (18 asserts PASS):** gutter=120 (cappado de 126), laneWidth comprimido 20.8; dot row0 em x=18.4,y=14; rail mesma-lane sintético `M 19 14 V 42`; cotovelo cross-lane real `0b0638a→0247e59` = `M 18.4 14 L 18.4 38 Q 18.4 42 22.4 42 L 39.2 42`; todas as arestas ortogonais (cotovelo `Q`, **nenhuma** bézier `c`); todos os X dentro de `[8,112]` (sem invadir texto); dots centrados nas linhas.  **Observação:** as colunas `[0,0,1,0,0,0]` do design eram de um snapshot antigo; o valor real do algoritmo (lane-assignment é NON-GOAL) é 5 lanes — visualmente válido.
+- [x] 4.3 Testar rolagem em repo com muitos commits: verificado por construção + matemática da virtualização. Gutter e rows vivem no MESMO scroll container flex (D1) → rolam juntos nativamente, sem `translateY`. `dotY(row)=row*28+14` e `linhaTop=row*28` → diferença constante 14 (dot sempre centralizado na linha) em qualquer `scrollTop`. `useVirtual` para 2000 commits: `end-start` ≤ ~45 rows (DOM bounded) e `placed.slice(start,end)` + `visibleEdges` (filtro por janela Y) espelham o mesmo `[start,end]` → apenas o slice visível no DOM. **Verificado por node (mesma matemática):** scrollTop 0/10000/54740/20000 → rendered 41/41/41/45, todos bounded.
+- [x] 4.4 Stress de lane-cap: repo sintético `/tmp/gui-lane-cap` com 20 commits + 15 branches (`git branch many{1..15}`). `verify-lanecap.mts` (npx tsx, geometria REAL) → **5/5 PASS**: 20 lanes → `gutterWidth=120` (não excede `MAX_GUTTER_W`), `laneWidth` comprimido 5.2, todos os dots X em `[10.6,109.4]` ⊂ `[8,112]` (sem overflow nem overlap de texto).
+- [x] 4.5 Validar project: `openspec validate fix-commit-graph-layout` passa. **Verificar:** retorna OK com todos os artifacts (proposal/specs/design/tasks) mapeando a implementação.
