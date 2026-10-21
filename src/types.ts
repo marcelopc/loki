@@ -86,3 +86,12 @@ export function statusSection(f: FileStatus): StatusSection {
   if (!f.index) return "unstaged";
   return "staged";
 }
+
+// Presentation grouping for the right-handed commit panel: untracked files are
+// folded into the "unstaged" section (with a distinct marker), so the panel has
+// exactly two file sections (Staged / Unstaged) plus the commit form.
+export type CommitPanelSection = "staged" | "unstaged";
+
+export function commitPanelSection(f: FileStatus): CommitPanelSection {
+  return statusSection(f) === "staged" ? "staged" : "unstaged";
+}

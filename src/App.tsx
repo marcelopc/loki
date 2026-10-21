@@ -3,7 +3,7 @@ import { Toolbar } from "./components/Toolbar";
 import { EmptyState } from "./components/EmptyState";
 import { LeftPane } from "./components/LeftPane";
 import { GraphPane } from "./components/GraphPane";
-import { RightPane } from "./components/DiffView";
+import { CommitPanel } from "./components/CommitPanel";
 import "./App.css";
 
 function Shell() {
@@ -17,7 +17,7 @@ function Shell() {
         <div className="workspace">
           <LeftPane />
           <GraphPane />
-          <RightPane />
+          <CommitPanel />
         </div>
       )}
     </div>

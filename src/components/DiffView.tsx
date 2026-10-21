@@ -1,67 +1,10 @@
-// Right pane: side-by-side diff renderer + commit form.
+// Center pane (lower half): side-by-side diff renderer for the selected file.
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useRepo } from "../state/RepoContext";
-import { api } from "../lib/tauri";
 import type { DiffHunk, DiffLine, FileDiff } from "../types";
 
-export function RightPane() {
-  const { repo } = useRepo();
-  if (!repo) return null;
-  return (
-    <div className="right-pane">
-      <CommitForm />
-      <DiffView />
-    </div>
-  );
-}
-
-function CommitForm() {
-  const { status, refresh } = useRepo();
-  const [message, setMessage] = useState("");
-  const [busy, setBusy] = useState(false);
-  const stagedCount = status.filter((f) => !f.untracked && !!f.index).length;
-
-  async function submit() {
-    if (!message.trim() || stagedCount === 0) return;
-    setBusy(true);
-    try {
-      await api.commitAll(message);
-      setMessage("");
-      await refresh();
-    } catch (e) {
-      alert(`Commit falhou: ${String(e)}`);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="commit-form card">
-      <div className="section-title">Commit</div>
-      <textarea
-        className="commit-message"
-        rows={4}
-        value={message}
-        placeholder="Mensagem do commit..."
-        onChange={(e) => setMessage(e.currentTarget.value)}
-        onKeyDown={(e) => {
-          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") submit();
-        }}
-      />
-      <button
-        className="btn primary full"
-        disabled={!message.trim() || stagedCount === 0 || busy}
-        onClick={submit}
-      >
-        {busy ? "Gravando..." : `Commit (${stagedCount} arquivo${stagedCount === 1 ? "" : "s"})`}
-      </button>
-      <div className="commit-hint">Ctrl+Enter para commitar</div>
-    </div>
-  );
-}
-
-function DiffView() {
+export function DiffView() {
   const { currentDiff, diffScope, repo } = useRepo();
   if (!currentDiff || !diffScope || !repo) {
     return <div className="diff-pane card">Selecione um arquivo nas mudanças para ver o diff.</div>;
@@ -152,6 +95,7 @@ function buildSideBySide(lines: DiffLine[]): SideRow[] {
       });
       i++;
     } else if (l.kind === "del") {
+      // Peek ahead for a matching add -> replacement pair.
       if (i + 1 < lines.length && lines[i + 1].kind === "add") {
         rows.push({
           kind: "replace",
@@ -172,6 +116,7 @@ function buildSideBySide(lines: DiffLine[]): SideRow[] {
         i++;
       }
     } else {
+      // add
       rows.push({
         kind: "add",
         oldLn: null,

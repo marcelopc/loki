@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { useRepo } from "../state/RepoContext";
 import { useVirtual } from "../hooks/useVirtual";
 import { CommitGraph, layoutCommits, graphMetrics, ROW_H } from "./CommitGraph";
+import { DiffView } from "./DiffView";
 import type { RefDecoration } from "../types";
 
 function RefBadges({ refs }: { refs: RefDecoration[] }) {
@@ -86,6 +87,7 @@ export function GraphPane() {
         )}
       </div>
       {repo && <CommitDetail hash={selectedHash} />}
+      <DiffView />
     </div>
   );
 }
