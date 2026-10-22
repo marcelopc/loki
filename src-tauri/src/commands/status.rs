@@ -57,6 +57,28 @@ pub fn unstage_file(app: AppHandle, state: State<'_, AppState>, path: String) ->
     Ok(())
 }
 
+/// Stages all modified, untracked and deleted files into the index at once
+/// (`git add --all`). Single-shot operation emitting one `repo-changed` event.
+#[tauri::command]
+pub fn stage_all(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    let client = client(state.inner())?;
+    client.run(&["add", "--all"]).map_err(|e| e.stderr)?;
+    state.invalidate_diff_cache();
+    let _ = app.emit("repo-changed", serde_json::json!({ "reason": "stage-all" }));
+    Ok(())
+}
+
+/// Unstages every staged file (`git restore --staged -- .`), preserving the
+/// working-tree content. Single-shot operation emitting one `repo-changed` event.
+#[tauri::command]
+pub fn unstage_all(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    let client = client(state.inner())?;
+    client.run(&["restore", "--staged", "--", "."]).map_err(|e| e.stderr)?;
+    state.invalidate_diff_cache();
+    let _ = app.emit("repo-changed", serde_json::json!({ "reason": "unstage-all" }));
+    Ok(())
+}
+
 /// Best-effort binary detection for a work-tree path.
 fn is_binary(client: &GitClient, path: &str) -> bool {
     // `git diff --numstat -z -- path` prints `-\t-\t<path>\0` for binaries.

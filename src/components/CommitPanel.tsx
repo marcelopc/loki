@@ -13,11 +13,17 @@ export function CommitPanel() {
   return (
     <div className="commit-panel">
       <section className="cp-section">
-        <div className="section-title">Unstaged</div>
+        <header className="section-head">
+          <div className="section-title">Unstaged</div>
+          <MassAction files={statusFor("unstaged")} staged={false} />
+        </header>
         <FileGroup files={statusFor("unstaged")} staged={false} />
       </section>
       <section className="cp-section">
-        <div className="section-title">Staged</div>
+        <header className="section-head">
+          <div className="section-title">Staged</div>
+          <MassAction files={statusFor("staged")} staged />
+        </header>
         <FileGroup files={statusFor("staged")} staged />
       </section>
       <CommitForm />
@@ -43,6 +49,33 @@ const LABEL: Record<string, string> = {
 function statusLabel(f: FileStatus): string {
   const ch = f.index || f.worktree;
   return LABEL[ch] ?? ch;
+}
+
+/// Inline action in a section header to stage/unstage all files at once.
+/// Hidden when the section has no files (empty sections show the `.clean` hint).
+function MassAction({ files, staged }: { files: FileStatus[]; staged: boolean }) {
+  const { repo, refresh } = useRepo();
+  if (files.length === 0) return null;
+  const label = staged ? "Remover todos do stage" : "Adicionar todos ao stage";
+  return (
+    <button
+      className={`mass-btn ${staged ? "unstage" : "stage"}`}
+      title={label}
+      aria-label={label}
+      disabled={!repo}
+      onClick={async () => {
+        try {
+          if (staged) await api.unstageAll();
+          else await api.stageAll();
+          await refresh();
+        } catch (e) {
+          alert(String(e));
+        }
+      }}
+    >
+      {staged ? "Tirar todos" : "Adicionar todos"}
+    </button>
+  );
 }
 
 function FileGroup({ files, staged }: { files: FileStatus[]; staged: boolean }) {

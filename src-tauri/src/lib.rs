@@ -64,6 +64,8 @@ pub fn run() {
             commands::status::get_status,
             commands::status::stage_file,
             commands::status::unstage_file,
+            commands::status::stage_all,
+            commands::status::unstage_all,
             commands::commit::commit_all,
             commands::commit::create_branch,
             commands::commit::checkout,

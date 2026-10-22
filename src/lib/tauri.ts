@@ -24,6 +24,8 @@ export const api = {
   getStatus: () => invoke<FileStatus[]>("get_status"),
   stageFile: (path: string) => invoke<void>("stage_file", { path }),
   unstageFile: (path: string) => invoke<void>("unstage_file", { path }),
+  stageAll: () => invoke<void>("stage_all"),
+  unstageAll: () => invoke<void>("unstage_all"),
 
   commitAll: (message: string) => invoke<CommitOutcome>("commit_all", { message }),
   createBranch: (name: string) => invoke<void>("create_branch", { name }),

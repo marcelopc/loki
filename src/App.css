@@ -174,16 +174,20 @@ select {
 .commit-panel {
   width: 480px;
   min-width: 320px;
+  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 10px;
-  overflow-y: auto;
+  overflow: hidden;
   background: var(--panel);
   border-right: 1px solid var(--border);
 }
 .cp-section {
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -204,6 +208,41 @@ select {
   font-size: 11px;
   letter-spacing: 0.05em;
   color: var(--text-dim);
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.mass-btn {
+  padding: 2px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.mass-btn.stage {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.mass-btn.stage:hover {
+  background: transparent;
+  color: var(--green);
+}
+.mass-btn.unstage {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+.mass-btn.unstage:hover {
+  background: transparent;
+  color: var(--red);
 }
 
 /* Branches */
@@ -241,6 +280,11 @@ select {
 }
 
 /* Changes */
+.file-group {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+}
 .file-group-title {
   color: var(--text-dim);
   font-size: 11px;
@@ -410,11 +454,14 @@ select {
   padding: 10px;
 }
 .commit-form {
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 .commit-message {
+  flex: 1 1 0;
   resize: vertical;
   min-height: 72px;
 }
