@@ -22,3 +22,12 @@ pnpm-debug.log*
 .idea
 .DS_Store
 *.sw?
+
+# Agent skills tooling (skills-tk)
+.claude/skills/readme-md/
+.cline/
+.gemini/
+.github/skills/
+.opencode/
+.roo/
+.skills-tk.yaml
