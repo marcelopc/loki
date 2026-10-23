@@ -3,6 +3,17 @@
 import { useMemo, useState } from "react";
 import { useRepo } from "../state/RepoContext";
 import { api } from "../lib/tauri";
+import { gitActionState, type GitAction } from "../types";
+import {
+  CloseIcon,
+  FolderIcon,
+  PlusIcon,
+  PopIcon,
+  PullIcon,
+  PushIcon,
+  RefreshIcon,
+  StashIcon,
+} from "./icons";
 
 export function Toolbar() {
   const { repo, branches, refresh, openRepo, error } = useRepo();
@@ -13,6 +24,27 @@ export function Toolbar() {
     () => branches.find((b) => b.isCurrent) ?? null,
     [branches]
   );
+
+  const actionState = useMemo(
+    () => gitActionState(repo, currentBranch),
+    [repo, currentBranch]
+  );
+
+  const runAction: Record<GitAction, () => Promise<void>> = {
+    pull: () => api.gitPull(),
+    push: () => api.gitPush(),
+    stash: () => api.gitStash(),
+    pop: () => api.gitStashPop(),
+  };
+
+  async function runGitAction(action: GitAction) {
+    try {
+      await runAction[action]();
+      await refresh();
+    } catch (e) {
+      alert(`${action[0].toUpperCase()}${action.slice(1)}: ${String(e)}`);
+    }
+  }
 
   async function switchBranch(name: string) {
     if (name === currentBranch?.name) return;
@@ -41,10 +73,10 @@ export function Toolbar() {
     <div className="toolbar">
       <div className="tb-left">
         <button className="btn" onClick={openRepo}>
-          📂 Abrir
+          <FolderIcon /> Abrir
         </button>
-        <button className="btn" onClick={refresh}>
-          ⟳
+        <button className="btn" onClick={refresh} title="Atualizar">
+          <RefreshIcon />
         </button>
         {repo && (
           <span className="tb-repo" title={repo.path}>
@@ -56,6 +88,41 @@ export function Toolbar() {
 
       {repo && (
         <div className="tb-right">
+          <div className="action-grp">
+            <button
+              className={`action-btn${actionState.pull.dim ? " dim" : ""}`}
+              disabled={actionState.pull.disabled}
+              onClick={() => runGitAction("pull")}
+              title="Puxar alterações do upstream (git pull)"
+            >
+              <PullIcon /> Pull
+            </button>
+            <button
+              className={`action-btn push${actionState.push.dim ? " dim" : ""}`}
+              disabled={actionState.push.disabled}
+              onClick={() => runGitAction("push")}
+              title="Enviar commits locais para o upstream (git push)"
+            >
+              <PushIcon /> Push
+            </button>
+            <button
+              className="action-btn"
+              disabled={actionState.stash.disabled}
+              onClick={() => runGitAction("stash")}
+              title="Guardar alterações no stash (git stash push)"
+            >
+              <StashIcon /> Stash
+            </button>
+            <button
+              className="action-btn"
+              disabled={actionState.pop.disabled}
+              onClick={() => runGitAction("pop")}
+              title="Restaurar a stash mais recente (git stash pop)"
+            >
+              <PopIcon /> Pop
+            </button>
+          </div>
+
           <select
             className="branch-select"
             value={currentBranch?.name ?? ""}
@@ -87,12 +154,12 @@ export function Toolbar() {
                 Criar
               </button>
               <button className="btn small" onClick={() => setCreating(false)}>
-                ✕
+                <CloseIcon />
               </button>
             </span>
           ) : (
             <button className="btn small" onClick={() => setCreating(true)} title="Nova branch">
-              + Branch
+              <PlusIcon /> Branch
             </button>
           )}
         </div>
