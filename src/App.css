@@ -82,12 +82,18 @@ body {
 
 /* ---------- Buttons ---------- */
 .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: var(--panel-2);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 5px 10px;
   cursor: pointer;
+}
+.btn svg {
+  flex-shrink: 0;
 }
 .btn:hover {
   border-color: var(--accent);
@@ -107,6 +113,46 @@ body {
 }
 .btn.full {
   width: 100%;
+}
+/* Git action buttons: pull/push/stash/pop */
+.action-grp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+}
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.action-btn svg {
+  flex-shrink: 0;
+}
+.action-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.action-btn.dim {
+  opacity: 0.55;
+  color: var(--text-dim);
+}
+.action-btn.push.dim {
+  border-color: transparent;
 }
 input,
 textarea,

@@ -77,6 +77,45 @@ export interface CheckoutOutcome {
   currentBranch: string;
 }
 
+// --- Git action buttons (pull/push/stash/pop) --------------------------------
+
+export type GitAction = "pull" | "push" | "stash" | "pop";
+
+export interface GitActionState {
+  /** True when the button must be inert (no repo / no upstream to push). */
+  disabled: boolean;
+  /** True when the action offers nothing (push with ahead === 0). Still clickable to force refresh. */
+  dim: boolean;
+}
+
+/**
+ * Derives the disabled/dim state of each toolbar git action from the open repo
+ * and the current branch's upstream/ahead — pure so it is testable in node
+ * (same convention as `commitPanelSection`).
+ *
+ * - Push: disabled without repo or without an upstream; dim (still clickable,
+ *   "nada a enviar") when upstream exists but ahead === 0.
+ * - Pull/Stash/Pop: enabled whenever a repo is open (git reports up-to-date /
+ *   empty stash itself); Pop with an empty stash surfaces a friendly error.
+ */
+export function gitActionState(
+  repo: RepoInfo | null,
+  currentBranch: BranchInfo | null
+): Record<GitAction, GitActionState> {
+  const hasRepo = repo !== null;
+  const hasUpstream = !!(currentBranch && currentBranch.upstream);
+  const ahead = currentBranch?.ahead ?? 0;
+  return {
+    pull: { disabled: !hasRepo, dim: false },
+    push: {
+      disabled: !hasRepo || !hasUpstream,
+      dim: hasRepo && hasUpstream && ahead === 0,
+    },
+    stash: { disabled: !hasRepo, dim: false },
+    pop: { disabled: !hasRepo, dim: false },
+  };
+}
+
 // --- Derived UI helpers ----------------------------------------------------
 
 export type StatusSection = "staged" | "unstaged" | "untracked";

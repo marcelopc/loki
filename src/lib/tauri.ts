@@ -31,5 +31,10 @@ export const api = {
   createBranch: (name: string) => invoke<void>("create_branch", { name }),
   checkout: (name: string) => invoke<CheckoutOutcome>("checkout", { name }),
 
+  gitPull: () => invoke<void>("git_pull"),
+  gitPush: () => invoke<void>("git_push"),
+  gitStash: () => invoke<void>("git_stash"),
+  gitStashPop: () => invoke<void>("git_stash_pop"),
+
   getDiff: (req: DiffRequest) => invoke<FileDiff[]>("get_diff", { req }),
 };
