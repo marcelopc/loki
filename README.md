@@ -1,6 +1,6 @@
-# GUI-Git
+# Loki
 
-O **GUI-Git** é um cliente desktop leve e rápido para gerenciamento e visualização de repositórios [Git](https://git-scm.com/), desenvolvido com [Tauri v2](https://tauri.app/) e [React 19](https://react.dev/). O projeto oferece uma experiência visual intuitiva para explorar o histórico de commits através de um grafo em SVG com colunas topológicas (estilo GitKraken), além de permitir inspeção de branches, revisão de diffs e criação de commits.
+O **Loki** é um cliente desktop leve e rápido para gerenciamento e visualização de repositórios [Git](https://git-scm.com/), desenvolvido com [Tauri v2](https://tauri.app/) e [React 19](https://react.dev/). O projeto oferece uma experiência visual intuitiva para explorar o histórico de commits através de um grafo em SVG com colunas topológicas (estilo GitKraken), além de permitir inspeção de branches, revisão de diffs e criação de commits.
 
 ---
 
