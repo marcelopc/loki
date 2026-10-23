@@ -3,6 +3,7 @@
 
 import { useRepo } from "../state/RepoContext";
 import { api } from "../lib/tauri";
+import { BranchIcon } from "./icons";
 
 export function LeftPane() {
   const { repo } = useRepo();
@@ -32,7 +33,9 @@ function BranchesPanel() {
 
   return (
     <div className="pane-section">
-      <div className="section-title">Branches</div>
+      <div className="section-title">
+        <BranchIcon size="13px" /> Branches
+      </div>
       {local.map((b) => (
         <div
           key={b.name}
