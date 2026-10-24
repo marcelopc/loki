@@ -131,7 +131,7 @@ pub fn current_branch(client: &GitClient) -> GitResult<String> {
     Ok(if name.is_empty() { "HEAD (detached)".to_string() } else { name })
 }
 
-/// Runs the `git log --all --decorate` command and returns parsed nodes.
+/// Runs the `git log --all --decorate=full` command and returns parsed nodes.
 ///
 /// Every field is single-line and NUL-delimited; git appends one `\n` per
 /// commit, so `\n` is a safe record separator (no `%x1e` needed).
@@ -142,7 +142,12 @@ pub fn log_all(client: &GitClient) -> GitResult<Vec<CommitNode>> {
     // topológica"), stabilizing the lane layout in the frontend. Without it
     // git defaults to reverse-chronological commit date, which can place a
     // parent's commit-date before its children under clock skew.
-    let out = client.run(&["log", "--all", "--topo-order", "--decorate", "--date=iso-strict", &fmt_arg])?;
+    //
+    // --decorate=full makes `%D` carry the full ref names (`refs/heads/main`,
+    // `refs/remotes/origin/main`), so a local branch whose name contains `/`
+    // (e.g. `feat/mdi-icons`) is not mistaken for a remote branch — the
+    // distinction is exact instead of guessed from the `remote/branch` shape.
+    let out = client.run(&["log", "--all", "--topo-order", "--decorate=full", "--date=iso-strict", &fmt_arg])?;
     Ok(parse_commit_stream(&out.stdout))
 }
 

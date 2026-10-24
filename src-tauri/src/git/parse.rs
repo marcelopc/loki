@@ -140,9 +140,9 @@ pub fn parse_decorations(d: &str) -> Vec<RefDecoration> {
     let mut out = Vec::new();
     for part in d.split(',').map(|s| s.trim()).filter(|s| !s.is_empty()) {
         let (name, kind) = if let Some(rest) = part.strip_prefix("tag:") {
-            (rest.trim().to_string(), "tag")
+            (trim_ref(rest.trim()).to_string(), "tag")
         } else if let Some(rest) = part.strip_prefix("HEAD ->") {
-            (rest.trim().to_string(), "branch") // current local branch
+            (trim_ref(rest.trim()).to_string(), "branch") // current local branch
         } else if part == "HEAD" {
             ("HEAD".to_string(), "head")
         } else if let Some(rest) = part.strip_prefix("remotes/") {
@@ -260,7 +260,9 @@ mod tests {
 
     #[test]
     fn parse_decorations_mixed() {
-        let d = "HEAD -> main, tag: v1.0, origin/main, refs/heads/dev";
+        // `git log --decorate=full` emits full ref names; `%D` then carries
+        // `refs/heads/...`, `refs/remotes/...`, `tag: refs/tags/...`.
+        let d = "HEAD -> refs/heads/main, tag: refs/tags/v1.0, refs/remotes/origin/main, refs/heads/dev";
         let decos = parse_decorations(d);
         let kinds: Vec<&str> = decos.iter().map(|r| r.kind.as_str()).collect();
         assert!(kinds.contains(&"branch"));
@@ -268,8 +270,23 @@ mod tests {
         assert!(kinds.contains(&"remote"));
         let tag = decos.iter().find(|r| r.kind == "tag").unwrap();
         assert_eq!(tag.name, "v1.0");
-        let remote = decos.iter().find(|r| r.name == "main").unwrap();
-        assert_eq!(remote.kind, "branch");
+        let head = decos.iter().find(|r| r.name == "main").unwrap();
+        assert_eq!(head.kind, "branch");
+        let remote = decos.iter().find(|r| r.name == "origin/main").unwrap();
+        assert_eq!(remote.kind, "remote");
+    }
+
+    #[test]
+    fn parse_decorations_local_branch_with_slash() {
+        // A local branch whose name contains `/` (e.g. `feat/mdi-icons`) must
+        // NOT be classified as remote just because of the slash. With
+        // --decorate=full the prefixes disambiguate exactly.
+        let d = "refs/remotes/origin/feat/mdi-icons, refs/heads/feat/mdi-icons";
+        let decos = parse_decorations(d);
+        let local = decos.iter().find(|r| r.name == "feat/mdi-icons").unwrap();
+        assert_eq!(local.kind, "branch");
+        let remote = decos.iter().find(|r| r.name == "origin/feat/mdi-icons").unwrap();
+        assert_eq!(remote.kind, "remote");
     }
 
     #[test]

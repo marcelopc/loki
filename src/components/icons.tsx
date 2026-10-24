@@ -9,6 +9,8 @@ import {
   mdiContentSaveMove,
   mdiFolderOpenOutline,
   mdiGit,
+  mdiGithub,
+  mdiLaptop,
   mdiPlus,
   mdiRefresh,
   mdiSourceBranch,
@@ -56,4 +58,12 @@ export const BranchIcon = ({ size = "15px", className }: IconProps) => (
 );
 export const GithubIcon = ({ size = "15px", className }: IconProps) => (
   <Icon path={mdiGit} size={size} className={className} />
+);
+// Local branch → laptop; remote branch → forge glyph. Kept forge-agnostic
+// (mdiGithub is a generic octocat; gitlab exists under mdiGitlab if needed).
+export const LaptopIcon = ({ size = "15px", className }: IconProps) => (
+  <Icon path={mdiLaptop} size={size} className={className} />
+);
+export const RemoteIcon = ({ size = "15px", className }: IconProps) => (
+  <Icon path={mdiGithub} size={size} className={className} />
 );

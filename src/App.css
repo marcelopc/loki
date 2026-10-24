@@ -442,6 +442,79 @@ select {
 .graph-gutter svg {
   display: block;
 }
+.ref-column {
+  position: relative;
+  flex: 0 0 auto;
+  width: var(--ref-col-w, 120px);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-right: 1px solid var(--border);
+}
+.ref-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  overflow: hidden;
+}
+/* Ref column cells as modern subtle chips: translucent kind-tinted background
+   + soft border, rounded, icon + name inside. Text stays light for contrast. */
+.ref-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  padding: 2px 6px;
+  color: var(--text);
+}
+/* Local branch chip follows the commit's lane color (set via --ref-color);
+   falls back to the green tint when no lane color is available. */
+.ref-cell.ref-branch {
+  background: color-mix(in srgb, var(--ref-color, #2da44e) 14%, transparent);
+  border-color: color-mix(in srgb, var(--ref-color, #2da44e) 32%, transparent);
+}
+/* Tag chip follows the commit's lane color (set via --ref-color); falls back
+   to the amber tint when no lane color is available. */
+.ref-cell.ref-tag {
+  background: color-mix(in srgb, var(--ref-color, #e3b341) 14%, transparent);
+  border-color: color-mix(in srgb, var(--ref-color, #e3b341) 32%, transparent);
+}
+.ref-cell.ref-remote {
+  background: rgba(139, 92, 246, 0.14);
+  border-color: rgba(139, 92, 246, 0.32);
+}
+.ref-cell.ref-head {
+  background: rgba(79, 156, 249, 0.14);
+  border-color: rgba(79, 156, 249, 0.32);
+}
+.ref-cell.ref-other {
+  background: rgba(155, 163, 171, 0.12);
+  border-color: rgba(155, 163, 171, 0.3);
+}
+/* Icon/symbol shares the light text color (kind is told by the glyph: ⎇ / ◈ / HEAD). */
+.ref-prefix {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--text);
+  flex: 0 0 auto;
+}
+.ref-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .graph-rows {
   position: relative;
   flex: 1 1 auto;
@@ -478,35 +551,6 @@ select {
   margin-left: auto;
   white-space: nowrap;
 }
-.refs {
-  display: inline-flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
-.ref-badge {
-  font-size: 10px;
-  padding: 1px 5px;
-  border-radius: 8px;
-  color: #10233a;
-  font-weight: 600;
-}
-.ref-branch {
-  background: #2da44e;
-}
-.ref-tag {
-  background: #e3b341;
-}
-.ref-head {
-  background: #4f9cf9;
-}
-.ref-remote {
-  background: #8b5cf6;
-  color: #fff;
-}
-.ref-other {
-  background: var(--panel-2);
-}
-
 .commit-detail {
   padding: 8px 12px;
   border-top: 1px solid var(--border);

@@ -116,6 +116,30 @@ export function gitActionState(
   };
 }
 
+// --- Ref column helpers ----------------------------------------------------
+
+const REF_PRIORITY: Record<string, number> = { head: 0, branch: 1, remote: 2, tag: 3 };
+
+/**
+ * Picks the single ref shown in the graph's ref column. Priority: HEAD >
+ * local branch > remote branch > tag; unknown kinds trail tags. Ties are
+ * broken by data order (first occurrence wins). Returns null for a commit
+ * with no refs — the row keeps an empty, aligned column.
+ */
+export function pickPrimaryRef(refs: RefDecoration[]): RefDecoration | null {
+  let best: RefDecoration | null = null;
+  let bestPri = Infinity;
+  for (const r of refs) {
+    const pri = REF_PRIORITY[r.kind] ?? 4;
+    // Strict `<` so a same-priority ref never displaces the first one.
+    if (pri < bestPri) {
+      best = r;
+      bestPri = pri;
+    }
+  }
+  return best;
+}
+
 // --- Derived UI helpers ----------------------------------------------------
 
 export type StatusSection = "staged" | "unstaged" | "untracked";
