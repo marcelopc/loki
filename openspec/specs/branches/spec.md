@@ -7,7 +7,7 @@ Lista branches locais e remotas com dados de upstream (ahead/behind do branch at
 ## Requirements
 
 ### Requirement: Listar branches
-O sistema SHALL listar as branches locais e remotas do repositório, marcando a branch atual e fornecendo upstream e contagem ahead/behind para branches locais com upstream.
+O sistema SHALL listar as branches locais e remotas do repositório em grupos separados e colapsáveis (Locais e Remotas), marcando a branch atual e fornecendo upstream e contagem ahead/behind para branches locais com upstream. Cada grupo possui estado de expansão/colapso independente, que prevalece sobre a exibição da listagem.
 
 #### Scenario: Lista de branches com atual indicado
 - **WHEN** há um repositório aberto com branches
@@ -19,7 +19,23 @@ O sistema SHALL listar as branches locais e remotas do repositório, marcando a 
 
 #### Scenario: Branches remotas
 - **WHEN** o repositório possui branches remotas rastreadas
-- **THEN** o sistema as lista separadamente das locais
+- **THEN** o sistema as lista em um grupo separado das locais
+
+#### Scenario: Remote-tracking branch classificada corretamente
+- **WHEN** o repositório possui uma remote-tracking branch (ex.: `refs/remotes/origin/main`, exibida como `origin/main`)
+- **THEN** o sistema a classifica como `kind = "remote"` e a exibe no grupo "Remotas", não em "Locais"
+
+#### Scenario: Grupos colapsáveis independentes
+- **WHEN** o usuário recolhe o grupo Locais e o grupo Remotas está expandido
+- **THEN** as branches locais ficam ocultas e as remotas permanecem visíveis, preservando o estado de cada grupo de forma independente
+
+#### Scenario: Recolher grupo oculta suas branches
+- **WHEN** o usuário recolhe um grupo de branches
+- **THEN** o sistema oculta as branches daquele grupo, mantendo visível o cabeçalho do grupo para permitir reexpansão
+
+#### Scenario: Expandir grupo reexibe branches
+- **WHEN** o usuário expande um grupo previamente recolhido
+- **THEN** o sistema reexibe as branches daquele grupo
 
 ### Requirement: Criar uma branch e alternar para ela
 O sistema SHALL criar uma branch com nome válido a partir do HEAD atual e alternar para ela (create + switch), rejeitando nomes inválidos.

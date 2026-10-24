@@ -62,7 +62,11 @@ pub fn list_branches(client: &GitClient) -> GitResult<Vec<BranchInfo>> {
     // git 2.34's for-each-ref does not expose `%(ahead)`/`%(behind)`
     // (added in 2.44), so we list refs here and compute ahead/behind with
     // `rev-list` only for branches that actually have an upstream.
-    let fmt = "%(refname:short)%00%(upstream:short)%00%(HEAD)";
+    // Use the full refname for classification, not `%(refname:short)`: the
+    // short form already strips `refs/remotes/` (e.g. `origin/main`), which
+    // would make every remote-tracking branch look local. Derive a short name
+    // ourselves only for display.
+    let fmt = "%(refname)%00%(upstream:short)%00%(HEAD)";
     let fmt_arg = format!("--format={fmt}");
     let out = client.run_str(&["for-each-ref", &fmt_arg, "refs/heads", "refs/remotes"])?;
 
@@ -72,10 +76,23 @@ pub fn list_branches(client: &GitClient) -> GitResult<Vec<BranchInfo>> {
         if fields.len() < 3 {
             continue;
         }
-        let name = fields[0].to_string();
-        let upstream = if fields[1].is_empty() { None } else { Some(fields[1].to_string()) };
+        let full = fields[0];
+        let name = full
+            .strip_prefix("refs/heads/")
+            .or_else(|| full.strip_prefix("refs/remotes/"))
+            .unwrap_or(full)
+            .to_string();
+        let upstream = if fields[1].is_empty() {
+            None
+        } else {
+            Some(fields[1].to_string())
+        };
         let is_head = fields[2] == "*";
-        let kind = if name.starts_with("remotes/") { "remote" } else { "local" };
+        let kind = if full.starts_with("refs/remotes/") {
+            "remote"
+        } else {
+            "local"
+        };
 
         let (ahead, behind) = if let Some(up) = &upstream {
             ahead_behind(client, &name, up).unwrap_or((None, None))
@@ -202,6 +219,82 @@ mod integration {
     use crate::git::diff::{DiffScope, run_diff};
     use std::env::temp_dir;
     use std::sync::atomic::{AtomicU64, Ordering};
+
+    /// A remote-tracking branch (`refs/remotes/origin/...`) must be reported
+    /// with `kind == "remote"`, not `local`. Regression test for the bug where
+    /// `%(refname:short)` stripped the `refs/remotes/` prefix, so every
+    /// remote-tracking branch was misclassified as local.
+    #[test]
+    fn list_branches_classifies_remote_tracking_as_remote() {
+        use std::process::Command as Cmd;
+
+        static SEQ: AtomicU64 = AtomicU64::new(0);
+        let base = temp_dir().join(format!(
+            "git-remote-{}-{}",
+            std::process::id(),
+            SEQ.fetch_add(1, Ordering::SeqCst)
+        ));
+        let _ = std::fs::remove_dir_all(&base);
+        std::fs::create_dir_all(&base).unwrap();
+        let remote = base.join("remote.git");
+        let work = base.join("work");
+        std::fs::create_dir_all(&work).unwrap();
+
+        let sh = |args: &[&str], cwd: &std::path::Path| {
+            let o = Cmd::new("git")
+                .args(args)
+                .current_dir(cwd)
+                .output()
+                .unwrap();
+            assert!(
+                o.status.success(),
+                "{args:?} -> {}",
+                String::from_utf8_lossy(&o.stderr)
+            );
+        };
+        sh(&["init", "-q", "--bare", remote.to_str().unwrap()], &base);
+        sh(&["init", "-q", "-b", "main"], &work);
+        let config = Cmd::new("git")
+            .args(["config", "user.email", "t@t"])
+            .current_dir(&work)
+            .output()
+            .unwrap();
+        assert!(config.status.success());
+        let config = Cmd::new("git")
+            .args(["config", "user.name", "T"])
+            .current_dir(&work)
+            .output()
+            .unwrap();
+        assert!(config.status.success());
+        // Set up the bare repo as a remote and push; this creates the
+        // `refs/remotes/origin/main` remote-tracking branch in `work`.
+        sh(
+            &["remote", "add", "origin", remote.to_str().unwrap()],
+            &work,
+        );
+        std::fs::write(work.join("f.txt"), "x").unwrap();
+        sh(&["add", "--", "f.txt"], &work);
+        sh(&["commit", "-q", "-m", "first"], &work);
+        sh(&["push", "-q", "-u", "origin", "main"], &work);
+
+        let client = GitClient::new(&work);
+        let branches = list_branches(&client).unwrap();
+        let origin_main = branches
+            .iter()
+            .find(|b| b.name == "origin/main")
+            .expect("expected an origin/main remote-tracking branch");
+        assert_eq!(
+            origin_main.kind, "remote",
+            "origin/main must be classified as remote"
+        );
+        let local_main = branches
+            .iter()
+            .find(|b| b.name == "main")
+            .expect("expected a local main");
+        assert_eq!(local_main.kind, "local");
+
+        let _ = std::fs::remove_dir_all(&base);
+    }
 
     /// Builds a small repo with a merge and a tag in a temp dir, then runs the
     /// full backend data path over it (graph, branches, status, diff).
